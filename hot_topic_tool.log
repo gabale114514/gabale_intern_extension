@@ -1,0 +1,38 @@
+2025-08-07 12:14:23,927 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 12:14:43,406 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 12:14:43,407 - hot_topic_tool - INFO - 开始批量处理 5 条数据
+2025-08-07 12:14:43,407 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 12:14:43,408 - hot_topic_tool - INFO - 成功处理话题: AI技术最新突破 (平台: zhihu, 排名: 2)
+2025-08-07 12:14:43,408 - hot_topic_tool - INFO - 成功处理话题: 股市大涨投资者信心增强 (平台: toutiao, 排名: 3)
+2025-08-07 12:14:43,408 - hot_topic_tool - INFO - 发现重复话题: 这是一个热门话题 新消息
+2025-08-07 12:14:43,409 - hot_topic_tool - ERROR - 无效的平台: invalid_platform
+2025-08-07 12:14:43,409 - hot_topic_tool - INFO - 批量处理完成: 成功 3 条, 重复 1 条, 错误 1 条
+2025-08-07 12:14:43,411 - hot_topic_tool - ERROR - 必需字段验证失败: {'platform': 'weibo', 'title': '', 'rank': 1}
+2025-08-07 12:14:43,412 - hot_topic_tool - ERROR - 必需字段验证失败: {'platform': 'weibo', 'title': '测试标题', 'rank': 0}
+2025-08-07 12:14:43,412 - hot_topic_tool - ERROR - 无效的热度值: -100
+2025-08-07 14:02:28,039 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 14:02:28,040 - hot_topic_tool - INFO - 开始批量处理 5 条数据
+2025-08-07 14:02:28,040 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 14:02:28,040 - hot_topic_tool - INFO - 成功处理话题: AI技术最新突破 (平台: zhihu, 排名: 2)
+2025-08-07 14:02:28,041 - hot_topic_tool - INFO - 成功处理话题: 股市大涨投资者信心增强 (平台: toutiao, 排名: 3)
+2025-08-07 14:02:28,041 - hot_topic_tool - INFO - 发现重复话题: 这是一个热门话题 新消息
+2025-08-07 14:02:28,041 - hot_topic_tool - ERROR - 无效的平台: invalid_platform
+2025-08-07 14:02:28,041 - hot_topic_tool - INFO - 批量处理完成: 成功 3 条, 重复 1 条, 错误 1 条
+2025-08-07 14:02:28,044 - hot_topic_tool - ERROR - 必需字段验证失败: {'platform': 'weibo', 'title': '', 'rank': 1}
+2025-08-07 14:02:28,044 - hot_topic_tool - ERROR - 必需字段验证失败: {'platform': 'weibo', 'title': '测试标题', 'rank': 0}
+2025-08-07 14:02:28,044 - hot_topic_tool - ERROR - 无效的热度值: -100
+2025-08-07 14:02:33,517 - hot_topic_tool - INFO - 开始批量处理 2 条数据
+2025-08-07 14:02:33,519 - hot_topic_tool - INFO - 成功处理话题: 今日热门话题 (平台: weibo, 排名: 1)
+2025-08-07 14:02:33,519 - hot_topic_tool - INFO - 成功处理话题: 科技新闻AI新突破 (平台: zhihu, 排名: 2)
+2025-08-07 14:02:33,520 - hot_topic_tool - INFO - 批量处理完成: 成功 2 条, 重复 0 条, 错误 0 条
+2025-08-07 16:51:47,039 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 16:51:47,040 - hot_topic_tool - INFO - 开始批量处理 5 条数据
+2025-08-07 16:51:47,040 - hot_topic_tool - INFO - 成功处理话题: 这是一个热门话题 新消息 (平台: weibo, 排名: 1)
+2025-08-07 16:51:47,041 - hot_topic_tool - INFO - 成功处理话题: AI技术最新突破 (平台: zhihu, 排名: 2)
+2025-08-07 16:51:47,041 - hot_topic_tool - INFO - 成功处理话题: 股市大涨投资者信心增强 (平台: toutiao, 排名: 3)
+2025-08-07 16:51:47,041 - hot_topic_tool - INFO - 发现重复话题: 这是一个热门话题 新消息
+2025-08-07 16:51:47,041 - hot_topic_tool - ERROR - 无效的平台: invalid_platform
+2025-08-07 16:51:47,041 - hot_topic_tool - INFO - 批量处理完成: 成功 3 条, 重复 1 条, 错误 1 条
+2025-08-07 16:51:47,045 - hot_topic_tool - ERROR - 必需字段验证失败: {'platform': 'weibo', 'title': '', 'rank': 1}
+2025-08-07 16:51:47,045 - hot_topic_tool - ERROR - 必需字段验证失败: {'platform': 'weibo', 'title': '测试标题', 'rank': 0}
+2025-08-07 16:51:47,046 - hot_topic_tool - ERROR - 无效的热度值: -100

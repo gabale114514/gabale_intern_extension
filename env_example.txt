@@ -1,0 +1,24 @@
+# 数据库配置
+DB_HOST=localhost
+DB_USER=root
+DB_PASSWORD=your_password
+DB_NAME=hot_topics_db
+
+# 采集配置
+COLLECTION_INTERVAL=10
+MAX_RETRIES=3
+REQUEST_TIMEOUT=10
+MAX_WORKERS=4
+
+# API配置
+API_HOST=0.0.0.0
+API_PORT=5000
+API_DEBUG=false
+
+# 日志配置
+LOG_LEVEL=INFO
+LOG_FILE=hot_topic_collector.log
+
+# 平台配置（可选）
+# 禁用特定平台：WEIBO_ENABLED=false
+# 自定义API地址：WEIBO_API_URL=https://custom.api.url
