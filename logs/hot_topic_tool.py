@@ -121,7 +121,6 @@ class HotTopicProcessor:
             
             # 检查重复
             if self._is_duplicate_with_existing(item):
-                logger.info(f"发现重复话题: {title}")
                 self.duplicate_count += 1
                 return None
             

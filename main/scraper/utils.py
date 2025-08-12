@@ -114,13 +114,14 @@ def is_duplicate_topic(topic1: Dict[str, Any], topic2: Dict[str, Any]) -> bool:
     
     similarity = calculate_similarity(title1, title2)
     threshold = PROCESSING_CONFIG['similarity_threshold']
+    
     return similarity >= threshold
 
 def validate_platform(platform: str) -> bool:
     """
     验证平台是否有效
     """
-    from core.scraper.platform_config import PLATFORM_CONFIG
+    from config.platform_config import PLATFORM_CONFIG
     return platform in PLATFORM_CONFIG and PLATFORM_CONFIG[platform]['enabled']
 
 def validate_rank(rank: int) -> bool:
@@ -157,12 +158,71 @@ def get_platform_icon(platform: str) -> str:
     """
     获取平台图标
     """
-    from core.scraper.platform_config import PLATFORM_CONFIG
+    from config.platform_config import PLATFORM_CONFIG
     return PLATFORM_CONFIG.get(platform, {}).get('icon', '📱')
 
 def get_platform_name(platform: str) -> str:
     """
     获取平台名称
     """
-    from core.scraper.platform_config import PLATFORM_CONFIG
+    from config.platform_config import PLATFORM_CONFIG
     return PLATFORM_CONFIG.get(platform, {}).get('name', platform)
+
+def safe_parse_datetime(date_value: Any) -> Optional[datetime]:
+    """
+    安全地解析日期时间，支持字符串和datetime对象
+    
+    Args:
+        date_value: 待解析的日期时间（可能是字符串或datetime对象）
+        
+    Returns:
+        datetime对象或None（解析失败时）
+    """
+    # 如果已经是datetime对象，直接返回
+    if isinstance(date_value, datetime):
+        return date_value
+        
+    # 如果是字符串，尝试解析
+    if isinstance(date_value, str):
+        try:
+            return datetime.fromisoformat(date_value)
+        except ValueError:
+            # 尝试其他常见格式
+            for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%d']:
+                try:
+                    return datetime.strptime(date_value, fmt)
+                except ValueError:
+                    continue
+                    
+        logger.warning(f"无法解析日期字符串: {date_value}")
+        return None
+        
+    # 其他类型
+    logger.warning(f"不支持的日期类型: {type(date_value)}")
+    return None
+def process_tags(tags, max_length=100):
+    """
+    处理标签列表，确保每个标签长度不超过max_length
+    
+    Args:
+        tags: 标签列表或单个标签字符串
+        max_length: 标签最大长度限制
+        
+    Returns:
+        处理后的标签列表
+    """
+    # 确保输入是列表
+    if not isinstance(tags, list):
+        if not tags:  # 空值处理
+            return []
+        tags = [str(tags)]  # 转换为单元素列表
+    
+    processed = []
+    for tag in tags:
+        if isinstance(tag, str):
+            # 截断过长标签
+            if len(tag) > max_length:
+                tag = tag[:max_length]
+            if tag.strip():  # 只保留非空标签
+                processed.append(tag.strip())
+    return processed

@@ -199,34 +199,17 @@ class DatabaseManager:
     
     def insert_hot_topic(self, topic_data: Dict[str, Any]) -> int:
         """
-        插入热搜话题
-        
-        Args:
-            topic_data: 话题数据
-            
-        Returns:
-            插入的话题ID，如果失败则返回0
+        插入热搜话题（适配新字段）
         """
-        # 检查平台ID
-        platform_id = topic_data.get('platform_id')
-        if not platform_id and 'platform' in topic_data:
-            platform = self.get_platform_by_code(topic_data['platform'])
-            if platform:
-                platform_id = platform['id']
-        
-        if not platform_id:
-            logger.error(f"插入话题失败: 无效的平台ID或代码 - {topic_data}")
-            return 0
-        
-        # 准备数据
         query = """
         INSERT INTO hot_topics 
-        (platform_id, title, `rank`, heat_value, url, hash_id, category, first_seen_at, last_seen_at) 
-        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
+        (platform_id, title, `rank`, heat_value, url, hash_id, 
+        category, first_seen_at, last_seen_at, rank_change, is_active) 
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
         
         params = (
-            platform_id,
+            topic_data.get('platform_id'),
             topic_data['title'],
             topic_data['rank'],
             topic_data.get('heat_value'),
@@ -234,20 +217,17 @@ class DatabaseManager:
             topic_data['hash_id'],
             topic_data.get('category'),
             topic_data.get('first_seen_at', datetime.now()),
-            topic_data.get('last_seen_at', datetime.now())
+            topic_data.get('last_seen_at', datetime.now()),
+            topic_data.get('rank_change', 0),
+            topic_data.get('is_active', True)
         )
         
-        # 执行插入
-        affected_rows = self.execute_update(query, params)
-        if affected_rows > 0:
+        affected = self.execute_update(query, params)
+        if affected > 0:
             topic_id = self.get_last_insert_id()
-            
-            # 插入标签
-            if 'tags' in topic_data and topic_data['tags']:
+            if 'tags' in topic_data:
                 self.insert_topic_tags(topic_id, topic_data['tags'])
-            
             return topic_id
-        
         return 0
     
     def update_hot_topic(self, topic_id: int, topic_data: Dict[str, Any]) -> bool:
@@ -644,7 +624,29 @@ class DatabaseManager:
             'success_rate': (success_result[0]['success_count'] / total_collections * 100) if total_collections > 0 and success_result else 0,
             'platform_stats': platform_result
         }
-
+    def get_rank_changes(self, platform_code: str, hours: int = 24, limit: int = 10) -> List[Dict[str, Any]]:
+        """
+        获取排名变动最大的话题
+        
+        Args:
+            platform_code: 平台代码
+            hours: 查询时间范围(小时)
+            limit: 返回数量限制
+            
+        Returns:
+            话题列表，按变动绝对值排序
+        """
+        query = """
+        SELECT t.*, p.code as platform_code, p.name as platform_name 
+        FROM hot_topics t
+        JOIN platforms p ON t.platform_id = p.id
+        WHERE p.code = %s
+        AND t.last_seen_at >= DATE_SUB(NOW(), INTERVAL %s HOUR)
+        AND t.rank_change != 0
+        ORDER BY ABS(t.rank_change) DESC
+        LIMIT %s
+        """
+        return self.execute_query(query, (platform_code, hours, limit))
 # 单例模式
 _db_instance = None
 
@@ -661,30 +663,70 @@ def get_db_manager() -> DatabaseManager:
     return _db_instance
 
 # 辅助函数
-
 def save_hot_topic(topic_data: Dict[str, Any]) -> Union[int, bool]:
     """
-    保存热搜话题（新增或更新）
+    优化后的保存热搜话题方法，支持排名变动追踪
     
     Args:
-        topic_data: 话题数据
+        topic_data: 包含平台、标题、排名等信息的字典
         
     Returns:
-        如果是新增，返回话题ID；如果是更新，返回是否成功；如果失败，返回0或False
+        话题ID (新增或已存在) 或 False (真正失败)
     """
     db = get_db_manager()
+    # 获取平台ID
+    platform = db.get_platform_by_code(topic_data['platform'])
+    if not platform:
+        logger.error(f"平台 {topic_data['platform']} 不存在")
+        return False  # 平台不存在，确认为失败
     
-    # 检查是否存在
-    existing_topic = None
-    if 'hash_id' in topic_data:
-        existing_topic = db.get_hot_topic_by_hash(topic_data['hash_id'])
+    # 检查是否已存在相同话题
+    existing = db.execute_query(
+        "SELECT id, `rank` FROM hot_topics WHERE hash_id = %s",
+        (topic_data['hash_id'],)
+    )
     
-    if existing_topic:
-        # 更新现有话题
-        return db.update_hot_topic(existing_topic['id'], topic_data)
+    if existing:
+        # 计算排名变化 (旧排名 - 新排名，正数表示排名上升)
+        old_rank = existing[0]['rank']
+        rank_change = old_rank - topic_data['rank']
+        
+        # 执行更新（即使字段无变化，也更新last_seen_at为当前时间，标记活跃）
+        affected = db.execute_update("""
+            UPDATE hot_topics 
+            SET `rank` = %s,
+                rank_change = %s,
+                heat_value = %s,
+                url = %s,
+                last_seen_at = NOW(),  # 关键：强制更新最后出现时间，确保活跃状态
+                is_active = TRUE
+            WHERE id = %s
+        """, (
+            topic_data['rank'],
+            rank_change,
+            topic_data.get('heat_value'),
+            topic_data.get('url'),
+            existing[0]['id']
+        ))
+        
+        # 更新标签（无论是否有字段变化，均同步标签）
+        if 'tags' in topic_data:
+            db.delete_topic_tags(existing[0]['id'])
+            db.insert_topic_tags(existing[0]['id'], topic_data['tags'])
+        
+        # 关键修改：只要记录存在，无论是否有字段变化，均返回现有ID（视为成功）
+        # 即使affected=0，也说明记录有效，只是本次无字段更新
+        return existing[0]['id']
+    
     else:
-        # 插入新话题
-        return db.insert_hot_topic(topic_data)
+        # 插入新记录
+        new_topic_id = db.insert_hot_topic({
+            **topic_data,
+            'platform_id': platform['id'],
+            'rank_change': 0,  # 新话题默认无变化
+            'is_active': True
+        })
+        return new_topic_id if new_topic_id > 0 else False  # 新增失败才返回False
 
 def save_collection_log(platform: str, status: str, stats: Dict[str, int], 
                        start_time: datetime, end_time: datetime, 
@@ -782,6 +824,43 @@ def get_statistics() -> Dict[str, Any]:
         'tags': db.get_tag_statistics(),
         'collections': db.get_collection_statistics(7)
     }
+def mark_inactive_topics(platform_code: str, current_hashes: List[str]) -> int:
+    """
+    标记不在当前榜单的话题为无效
+    
+    Args:
+        platform_code: 平台代码
+        current_hashes: 当前榜单所有话题的hash_id列表
+        
+    Returns:
+        被标记为无效的话题数量
+    """
+    db = get_db_manager()
+    
+    # 获取平台ID
+    platform = db.get_platform_by_code(platform_code)
+    if not platform:
+        logger.error(f"平台 {platform_code} 不存在")
+        return 0
+    
+    # 构建查询条件
+    query = """
+    UPDATE hot_topics 
+    SET is_active = FALSE,
+        rank_change = 0
+    WHERE platform_id = %s
+      AND is_active = TRUE
+    """
+    params = [platform['id']]
+    
+    # 如果有当前话题列表，排除这些话题
+    if current_hashes:
+        query += " AND hash_id NOT IN (%s)" % ",".join(["%s"] * len(current_hashes))
+        params.extend(current_hashes)
+    
+    # 执行更新
+    return db.execute_update(query, tuple(params))
+
 
 # 测试连接
 if __name__ == "__main__":
