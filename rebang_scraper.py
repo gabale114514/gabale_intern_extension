@@ -83,15 +83,15 @@ PLATFORM_CONFIG_DETAILED = {
     },
     # 其他平台配置类似，根据实际响应补充
     'baidu': {
-        'api_url': 'https://api.rebang.today/v1/items?tab=baidu-tieba&sub_tab=topic&page=1&version=1',
-        'data_path': ['data', 'list'],  # 正确路径：data.list
-        'list_type': 'string',  # 关键修复：list是JSON字符串，需解码
-        'field_mapping': {  # 关键修复：字段映射完全匹配实际响应
-            'title': 'name',  # 标题字段是name（而非title）
-            'heat': 'discuss_num',  # 热度字段是discuss_num（讨论数）
-            'url': 'id',  # 链接可基于id构建（如https://tieba.baidu.com/topic/{id}）
-            'tag': 'topic_tag'  # 标签标识是topic_tag（数值型）
-        }
+    'api_url': 'https://api.rebang.today/v1/items?tab=baidu-tieba&sub_tab=topic&page=1&version=1',
+    'data_path': ['data', 'list'],
+    'list_type': 'string',
+    'field_mapping': {
+        'title': 'name',  # 标题字段
+        'heat': 'discuss_num',  # 热度值（讨论数）
+        'url': 'id',  # 链接ID
+        'tag': 'topic_tag'  # 这是引发问题的字段
+    }
     },
     'bilibili': {
         'api_url': 'https://api.rebang.today/v1/items?tab=bilibili&sub_tab=popular&date_type=now&page=1&version=1',

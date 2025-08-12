@@ -12,20 +12,39 @@ from config import TAG_PATTERNS, CATEGORY_KEYWORDS, PROCESSING_CONFIG
 
 logger = logging.getLogger(__name__)
 
-def clean_text(text: str) -> str:
+def clean_text(text: Any) -> str:
     """
-    清理文本内容
+    清理文本内容（增强版）
+    功能：
+    1. 支持处理字符串、数值和None类型输入
+    2. 移除多余空白和特殊字符
+    3. 自动进行类型转换和长度限制
+    
+    参数：
+    text: 可以是str/int/float/None等类型
+    
+    返回：
+    处理后的字符串
     """
-    if not text:
+    # 处理空值和类型转换
+    if text is None:
         return ""
     
-    # 移除多余的空白字符
-    text = re.sub(r'\s+', ' ', text.strip())
-    # 移除特殊字符，保留中文、英文、数字和基本标点
-    text = re.sub(r'[^\w\s\u4e00-\u9fff\-\.\,\!\?\(\)\[\]【】]', '', text)
+    # 数值类型处理
+    if isinstance(text, (int, float)):
+        text = str(text)
     
-    # 限制长度
-    max_length = PROCESSING_CONFIG['max_title_length']
+    # 确保现在是字符串类型
+    if not isinstance(text, str):
+        return ""
+    
+    # 原始清理逻辑
+    text = text.strip()
+    text = re.sub(r'\s+', ' ', text)  # 合并连续空白
+    text = re.sub(r'[^\w\s\u4e00-\u9fff\-\.\,\!\?\(\)\[\]【】]', '', text)  # 过滤特殊字符
+    
+    # 长度限制
+    max_length = PROCESSING_CONFIG.get('max_title_length', 255)  # 默认值防止KeyError
     if len(text) > max_length:
         text = text[:max_length] + "..."
     
