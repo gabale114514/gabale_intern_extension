@@ -12,8 +12,8 @@ import random
 # 添加当前目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from database_manager import DatabaseManager, get_db_manager, save_hot_topic, save_collection_log
-from database_config import DATABASE_CONFIG
+from main.database.database_manager import DatabaseManager, get_db_manager, save_hot_topic, save_collection_log
+from config.database_config import DATABASE_CONFIG
 
 def test_connection():
     """测试数据库连接"""

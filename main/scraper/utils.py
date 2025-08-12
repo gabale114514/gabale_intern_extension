@@ -8,7 +8,7 @@ import json
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 import logging
-from config import TAG_PATTERNS, CATEGORY_KEYWORDS, PROCESSING_CONFIG
+from config.platform_config import TAG_PATTERNS, CATEGORY_KEYWORDS, PROCESSING_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -120,7 +120,7 @@ def validate_platform(platform: str) -> bool:
     """
     验证平台是否有效
     """
-    from config import PLATFORM_CONFIG
+    from core.scraper.platform_config import PLATFORM_CONFIG
     return platform in PLATFORM_CONFIG and PLATFORM_CONFIG[platform]['enabled']
 
 def validate_rank(rank: int) -> bool:
@@ -157,12 +157,12 @@ def get_platform_icon(platform: str) -> str:
     """
     获取平台图标
     """
-    from config import PLATFORM_CONFIG
+    from core.scraper.platform_config import PLATFORM_CONFIG
     return PLATFORM_CONFIG.get(platform, {}).get('icon', '📱')
 
 def get_platform_name(platform: str) -> str:
     """
     获取平台名称
     """
-    from config import PLATFORM_CONFIG
+    from core.scraper.platform_config import PLATFORM_CONFIG
     return PLATFORM_CONFIG.get(platform, {}).get('name', platform)

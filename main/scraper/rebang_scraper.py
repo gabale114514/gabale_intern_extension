@@ -1,3 +1,4 @@
+import os
 import logging
 import requests
 from requests.exceptions import RequestException
@@ -8,11 +9,10 @@ import random
 from datetime import datetime
 from urllib.parse import urljoin, urlparse, parse_qs
 from typing import List, Dict, Any, Optional, Tuple
-import os
-
-from config import PLATFORM_CONFIG
-from utils import clean_text, generate_hash
-from database_manager import save_hot_topic, get_db_manager
+from main.database.database_manager import save_hot_topic, save_collection_log
+from config.platform_config import PLATFORM_CONFIG
+from main.scraper.utils import clean_text, generate_hash
+from main.database.database_manager import save_hot_topic, get_db_manager
 from bs4 import BeautifulSoup
 import requests
 os.makedirs('debug/full_responses', exist_ok=True)
@@ -22,7 +22,7 @@ logging.basicConfig(
     level=logging.DEBUG,
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[
-        logging.FileHandler('hot_topic_tool.log', encoding='utf-8'),
+        logging.FileHandler('logs/hot_topic_tool.log', encoding='utf-8'),
         logging.StreamHandler()
     ]
 )
@@ -408,21 +408,61 @@ class RebangScraper:
             if not PLATFORM_CONFIG.get(platform_code, {}).get('enabled', True):
                 logger.info(f"平台 {platform_code} 已禁用，跳过")
                 continue
+                
             try:
                 start_time = datetime.now()
                 topics, scrape_stats = self.scrape_platform(platform_code)
                 save_stats = self.save_topics(topics)
                 end_time = datetime.now()
+                
+                # 确定采集状态
+                if save_stats['success_count'] == scrape_stats['total_count']:
+                    status = 'success'
+                elif save_stats['success_count'] > 0:
+                    status = 'partial'
+                else:
+                    status = 'failed'
+                
+                # 保存采集日志
+                save_collection_log(
+                    platform=platform_code,
+                    status=status,
+                    stats={
+                        'total_count': scrape_stats['total_count'],
+                        'success_count': save_stats['success_count'],
+                        'error_count': save_stats['error_count'],
+                        'duplicate_count': save_stats['duplicate_count']
+                    },
+                    start_time=start_time,
+                    end_time=end_time
+                )
+                
                 results[platform_code] = {
-                    'status': 'success' if save_stats['success_count'] > 0 else 'failed',
+                    'status': status,
                     'stats': save_stats,
                     'duration': (end_time - start_time).total_seconds()
                 }
                 logger.info(f"平台 {platform_code} 完成: 成功保存 {save_stats['success_count']} 条")
                 time.sleep(random.uniform(2, 5))  # 反爬延迟
+                
             except Exception as e:
                 logger.error(f"平台 {platform_code} 采集异常: {e}")
+                # 保存失败的采集日志
+                save_collection_log(
+                    platform=platform_code,
+                    status='failed',
+                    stats={
+                        'total_count': 0,
+                        'success_count': 0,
+                        'error_count': 1,
+                        'duplicate_count': 0
+                    },
+                    start_time=start_time,
+                    end_time=datetime.now(),
+                    error_message=str(e)
+                )
                 results[platform_code] = {'status': 'error', 'error': str(e)}
+                
         return results
 
 

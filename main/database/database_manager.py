@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional, Tuple, Union
 from datetime import datetime
 import json
 
-from database_config import DATABASE_CONFIG
+from config.database_config import DATABASE_CONFIG
 
 # 配置日志
 logger = logging.getLogger(__name__)

@@ -10,8 +10,8 @@ from datetime import datetime
 # 添加当前目录到Python路径
 sys.path.append(os.path.dirname(os.path.abspath(__file__)))
 
-from hot_topic_tool import process_hot_topic, process_hot_topics_batch, get_tool_info
-from utils import clean_text, extract_tags, categorize_topic, validate_platform
+from logs.hot_topic_tool import process_hot_topic, process_hot_topics_batch, get_tool_info
+from main.scraper.utils import clean_text, extract_tags, categorize_topic, validate_platform
 
 def test_utils():
     """测试工具函数"""

@@ -9,8 +9,8 @@ from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, asdict
 import hashlib
 
-from config import TOOL_CONFIG, PROCESSING_CONFIG
-from utils import (
+from config.platform_config import TOOL_CONFIG, PROCESSING_CONFIG
+from main.scraper.utils import (
     clean_text, extract_tags, generate_hash, categorize_topic,
     validate_platform, validate_rank, validate_heat_value,
     is_duplicate_topic, get_platform_icon, get_platform_name
