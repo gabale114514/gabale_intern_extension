@@ -356,12 +356,12 @@ class RebangScraper:
         if not heat_str or not isinstance(heat_str, str):
             return None
         # 原字符串型热度解析逻辑（保留，适配其他平台）
-        match = re.search(r'(\d+\.?\d*)\s*([万亿]?)', heat_str)
+        match = re.search(r'(\d+\.?\d*)\s*([w万亿]?)', heat_str)
         if not match:
             return None
         value = float(match.group(1))
         unit = match.group(2)
-        if unit == '万' or 'w':
+        if unit == '万' or unit == 'w':
             value *= 10000
         elif unit == '亿':
             value *= 100000000
