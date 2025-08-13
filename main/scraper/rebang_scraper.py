@@ -10,10 +10,10 @@ from datetime import datetime, timedelta
 from urllib.parse import urljoin, urlparse, parse_qs
 from typing import List, Dict, Any, Optional, Tuple
 from main.database.database_manager import mark_inactive_topics, save_hot_topic, save_collection_log, get_db_manager
-from config.platform_config import PLATFORM_CONFIG
+# from config.platform_config import PLATFORM_CONFIG
 from main.scraper.utils import clean_text, generate_hash
 from bs4 import BeautifulSoup
-from utils import process_tags, safe_parse_datetime
+from main.scraper.utils import parse_json_string, process_tags, safe_get, safe_parse_datetime
 # 创建调试目录
 os.makedirs('debug/full_responses', exist_ok=True)
 
@@ -126,49 +126,6 @@ PLATFORM_CONFIG_DETAILED = {
     }
 }
 
-def safe_get(data, key, default=None):
-    """安全获取数据（支持嵌套字典/列表）"""
-    if isinstance(data, dict):
-        return data.get(key, default)
-    elif isinstance(data, list) and isinstance(key, int) and 0 <= key < len(data):
-        return data[key]
-    return default
-
-def parse_json_string(s: str) -> Optional[List[Dict]]:
-    """将JSON字符串解析为数组（处理可能的格式错误）"""
-    try:
-        return json.loads(s)
-    except json.JSONDecodeError as e:
-        logger.warning(f"JSON字符串解析失败: {e}, 原始字符串: {s[:100]}")
-        return None
-
-def safe_fromisoformat(date_str: Any) -> Optional[datetime]:
-    """
-    安全地将字符串转换为datetime对象
-    
-    Args:
-        date_str: 待转换的日期字符串
-        
-    Returns:
-        datetime对象或None（转换失败时）
-    """
-    if not isinstance(date_str, str):
-        logger.warning(f"尝试将非字符串类型转换为datetime: {type(date_str)}")
-        return None
-        
-    try:
-        return datetime.fromisoformat(date_str)
-    except ValueError:
-        # 尝试处理其他常见格式
-        for fmt in ['%Y-%m-%d %H:%M:%S', '%Y-%m-%dT%H:%M:%S.%fZ', '%Y-%m-%d']:
-            try:
-                return datetime.strptime(date_str, fmt)
-            except ValueError:
-                continue
-                
-        logger.warning(f"无法解析日期字符串: {date_str}")
-        return None
-
 class RebangScraper:
     def __init__(self):
         self.session = requests.Session()
@@ -176,7 +133,6 @@ class RebangScraper:
         self.update_headers()
         self.platform_valid_api = {}  # 存储验证过的API
         self.db = get_db_manager()  # 数据库连接
-        
         # 去重配置
         self.deduplication_config = {
             'hash_id_threshold': 0,  # hash_id完全匹配则视为重复
@@ -191,11 +147,9 @@ class RebangScraper:
             'Accept': 'application/json, text/plain, */*',
             'Referer': f'{self.base_url}/',
         })
-
     def get_platform_config(self, platform_code: str) -> Optional[Dict]:
         """获取平台专属配置"""
         return PLATFORM_CONFIG_DETAILED.get(platform_code)
-    
     def _is_duplicate_topic(self, topic: Dict[str, Any]) -> Tuple[bool, Optional[int]]:
         """
         判断话题是否重复
@@ -232,10 +186,9 @@ class RebangScraper:
                 return True, existing['id']
                 
         return False, None
-    
     def _title_similarity(self, title1: str, title2: str) -> float:
         """
-        计算两个标题的相似度（使用简单的Jaccard系数）
+        计算两个标题的相似度
         
         Args:
             title1: 第一个标题
@@ -253,7 +206,6 @@ class RebangScraper:
             
         # 计算Jaccard系数: 交集大小 / 并集大小
         return len(words1 & words2) / len(words1 | words2)
-
     def fetch_api_data(self, platform_code: str, max_retries: int = 2) -> Optional[Dict]:
         """获取并验证API数据（返回解析后的JSON）"""
         config = self.get_platform_config(platform_code)
@@ -285,7 +237,6 @@ class RebangScraper:
                 retries += 1
                 time.sleep(1 * retries)
         return None
-
     def parse_api_data(self, api_data: Dict, platform_code: str) -> List[Dict]:
         """根据平台配置解析API数据"""
         config = self.get_platform_config(platform_code)
@@ -348,7 +299,6 @@ class RebangScraper:
 
         logger.info(f"平台 {platform_code} 解析出 {len(topics)} 个有效话题")
         return topics
-
     def extract_heat_value(self, heat_str: Any) -> Optional[int]:
         """适配数值型热度（如微博heat_num）和字符串型热度"""
         if isinstance(heat_str, int):
@@ -366,134 +316,6 @@ class RebangScraper:
         elif unit == '亿':
             value *= 100000000
         return int(value)
-
-    def scrape_platform_via_web(self, platform_code: str) -> List[Dict]:
-        """优化网页解析（作为API备份）"""
-        config = self.get_platform_config(platform_code)
-        if not config:
-            return []
-        tab = platform_code  # 简化tab映射
-        url = f"{self.base_url}/?tab={tab}"
-        try:
-            html = self.fetch_page(url)
-            if not html:
-                return []
-            # 尝试解析网页中的JSON数据（现代网站常用）
-            soup = BeautifulSoup(html, 'html.parser')
-            # 查找内嵌JSON（如<script id="__NEXT_DATA__">）
-            script = soup.find('script', id='__NEXT_DATA__')
-            if script:
-                try:
-                    web_json = json.loads(script.text)
-                    web_items = safe_get(web_json, ['props', 'pageProps', 'data', 'list'])
-                    if isinstance(web_items, list):
-                        return self._parse_web_items(web_items, platform_code)
-                except json.JSONDecodeError as e:
-                    logger.warning(f"平台 {platform_code} 网页JSON解析失败: {e}")
-            return self._parse_web_html(soup, platform_code)
-        except Exception as e:
-            logger.error(f"平台 {platform_code} 网页解析失败: {e}")
-            return []
-
-    def _parse_web_items(self, items: List[Dict], platform_code: str) -> List[Dict]:
-        """解析网页中的JSON数据项"""
-        topics = []
-        for idx, item in enumerate(items, 1):
-            title = clean_text(safe_get(item, 'title', ""))
-            if not title:
-                continue
-            topics.append({
-                "platform": platform_code,
-                "title": title,
-                "rank": idx,
-                "heat_value": self.extract_heat_value(safe_get(item, 'heat_str', "")),
-                "timestamp": datetime.now().isoformat(),
-                "hash_id": generate_hash(f"{title}_{platform_code}"),
-                "tags": process_tags(clean_text(safe_get(item, 'tag', "")))  # 添加这行
-            })
-        return topics
-
-    def _parse_web_html(self, soup: BeautifulSoup, platform_code: str) -> List[Dict]:
-        """解析网页HTML标签（按平台定制选择器）"""
-        # 不同平台网页结构不同，这里以抖音为例
-        selectors = {
-            'douyin': '.hot-item',
-            'weibo': '.weibo-item',
-            'zhihu': '.zhihu-topic'
-        }
-        selector = selectors.get(platform_code, '.hot-item')
-        items = soup.select(selector)
-        topics = []
-        for idx, item in enumerate(items, 1):
-            title_elem = item.select_one('.title')
-            if not title_elem:
-                continue
-            title = clean_text(title_elem.text)
-            heat_elem = item.select_one('.heat')
-            heat_str = heat_elem.text if heat_elem else ""
-            topics.append({
-                "platform": platform_code,
-                "title": title,
-                "rank": idx,
-                "heat_value": self.extract_heat_value(heat_str),
-                "hash_id": generate_hash(f"{title}_{platform_code}")
-            })
-        return topics
-
-    def fetch_page(self, url: str, max_retries: int = 3) -> Optional[str]:
-        """获取网页内容"""
-        retries = 0
-        while retries < max_retries:
-            try:
-                self.update_headers()
-                response = self.session.get(url, timeout=10)
-                response.raise_for_status()
-                return response.text
-            except RequestException as e:
-                logger.warning(f"网页 {url} 获取失败 ({retries+1}/{max_retries}): {e}")
-                retries += 1
-                time.sleep(2 * retries)
-        return None
-
-    def scrape_platform(self, platform_code: str) -> Tuple[List[Dict], Dict[str, int]]:
-        """采集单个平台（优先API，失败则网页解析）"""
-        logger.info(f"开始采集平台 {platform_code}")
-        
-        # 确保数据库连接
-        if not self.db.connection or not self.db.connection.is_connected():
-            self.db.connect()
-        
-        # 1. 采集数据
-        api_data = self.fetch_api_data(platform_code)
-        topics = self.parse_api_data(api_data, platform_code) if api_data else []
-        
-        # 2. 如果API失败，尝试网页解析
-        if not topics:
-            logger.info(f"平台 {platform_code} API解析失败，尝试网页解析")
-            topics = self.scrape_platform_via_web(platform_code)
-        
-        # 3. 处理采集结果
-        if topics:
-            # 获取当前所有hash_id用于标记失效话题
-            current_hashes = [t['hash_id'] for t in topics]
-            mark_inactive_topics(platform_code, current_hashes)
-            
-            # 保存话题并统计
-            save_stats = self.save_topics(topics)
-        else:
-            save_stats = {
-                'total_count': 0,
-                'success_count': 0,
-                'error_count': 0,
-                'duplicate_count': 0
-            }
-        
-        return topics, {
-            'total_count': len(topics),
-            'success_count': save_stats['success_count'],
-            'error_count': save_stats['error_count']
-        }
-
     def save_topics(self, topics: List[Dict]) -> Dict[str, int]:
         """保存话题到数据库（强化去重逻辑）"""
         stats = {'total_count': len(topics), 'success_count': 0, 'error_count': 0, 'duplicate_count': 0}
@@ -538,16 +360,56 @@ class RebangScraper:
                 stats['error_count'] += 1
         
         return stats
-
+    def scrape_platform(self, platform_code: str) -> Tuple[List[Dict], Dict[str, int]]:
+            """采集单个平台（优先API，失败则网页解析）"""
+            logger.info(f"开始采集平台 {platform_code}")
+            
+            # 确保数据库连接
+            if not self.db.connection or not self.db.connection.is_connected():
+                self.db.connect()
+            
+            # 1. 采集数据
+            api_data = self.fetch_api_data(platform_code)
+            topics = self.parse_api_data(api_data, platform_code) if api_data else []
+            
+            # # 2. 如果API失败，尝试网页解析
+            # if not topics:
+            #     logger.info(f"平台 {platform_code} API解析失败，尝试网页解析")
+            #     topics = self.scrape_platform_via_web(platform_code)
+            
+            # 3. 处理采集结果
+            if topics:
+                # 获取当前所有hash_id用于标记失效话题
+                current_hashes = [t['hash_id'] for t in topics]
+                mark_inactive_topics(platform_code, current_hashes)
+                
+                # 保存话题并统计
+                save_stats = self.save_topics(topics)
+            else:
+                save_stats = {
+                    'total_count': 0,
+                    'success_count': 0,
+                    'error_count': 0,
+                    'duplicate_count': 0
+                }
+            
+            return topics, {
+                'total_count': len(topics),
+                'success_count': save_stats['success_count'],
+                'error_count': save_stats['error_count']
+            }
     def scrape_all_platforms(self) -> Dict[str, Dict]:
         """采集所有平台"""
         results = {}
         # 确保数据库连接
         if not self.db.connection or not self.db.connection.is_connected():
             self.db.connect()
-            
+        # 从数据库获取所有启用的平台
+        enabled_platforms = self.db.get_enabled_platforms()  # 调用数据库层的方法
+        enabled_codes = {p['code'] for p in enabled_platforms}  # 提取启用的平台code
+        
         for platform_code in PLATFORM_CONFIG_DETAILED.keys():
-            if not PLATFORM_CONFIG.get(platform_code, {}).get('enabled', True):
+            if platform_code not in enabled_codes:
                 logger.info(f"平台 {platform_code} 已禁用，跳过")
                 continue
                 

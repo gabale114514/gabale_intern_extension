@@ -21,50 +21,6 @@ PROCESSING_CONFIG = {
     'similarity_threshold': 0.8,     # 相似度阈值
 }
 
-# 平台配置
-PLATFORM_CONFIG = {
-    'weibo': {
-        'name': '微博',
-        'enabled': True,
-        'icon': '🐦'
-    },
-    'zhihu': {
-        'name': '知乎',
-        'enabled': True,
-        'icon': '📚'
-    },
-    'xiaohongshu': {
-        'name': '小红书',
-        'enabled': True,
-        'icon': '📖'
-    },
-    'toutiao': {
-        'name': '今日头条',
-        'enabled': True,
-        'icon': '📰'
-    },
-    'baidu': {
-        'name': '百度',
-        'enabled': True,
-        'icon': '🔍'
-    },
-    'xueqiu': {
-        'name': '雪球',
-        'enabled': True,
-        'icon': '📈'
-    },
-    'douyin': {
-        'name': '抖音',
-        'enabled': True,
-        'icon': '🎵'
-    },
-    'bilibili': {
-        'name': '哔哩哔哩',
-        'enabled': True,
-        'icon': '📺'
-    }
-}
-
 # 标签配置
 TAG_PATTERNS = {
     '热': r'热|🔥|hot|HOT',
