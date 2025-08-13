@@ -34,9 +34,8 @@ USER_AGENTS = [
     'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.5 Safari/605.1.15',
     'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:115.0) Gecko/20100101 Firefox/115.0'
 ]
-
+# 平台配置
 PLATFORM_CONFIG_DETAILED = {
-    # 平台配置保持不变
     'weibo': {
         'api_url': 'https://api.rebang.today/v1/items?tab=weibo&sub_tab=search&version=2',
         'data_path': ['data', 'list'],
@@ -362,7 +361,7 @@ class RebangScraper:
             return None
         value = float(match.group(1))
         unit = match.group(2)
-        if unit == '万':
+        if unit == '万' or 'w':
             value *= 10000
         elif unit == '亿':
             value *= 100000000
