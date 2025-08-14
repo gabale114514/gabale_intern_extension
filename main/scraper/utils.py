@@ -154,20 +154,6 @@ def safe_json_loads(data: str, default: Any = None) -> Any:
         logger.warning(f"JSON解析失败: {data}")
         return default
 
-def get_platform_icon(platform: str) -> str:
-    """
-    获取平台图标
-    """
-    from config.platform_config import PLATFORM_CONFIG
-    return PLATFORM_CONFIG.get(platform, {}).get('icon', '📱')
-
-def get_platform_name(platform: str) -> str:
-    """
-    获取平台名称
-    """
-    from config.platform_config import PLATFORM_CONFIG
-    return PLATFORM_CONFIG.get(platform, {}).get('name', platform)
-
 def safe_parse_datetime(date_value: Any) -> Optional[datetime]:
     """
     安全地解析日期时间，支持字符串和datetime对象

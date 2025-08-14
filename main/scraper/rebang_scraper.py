@@ -11,9 +11,7 @@ from urllib.parse import urljoin, urlparse, parse_qs
 from typing import List, Dict, Any, Optional, Tuple
 from main.database.database_manager import mark_inactive_topics, save_hot_topic, save_collection_log, get_db_manager
 # from config.platform_config import PLATFORM_CONFIG
-from main.scraper.utils import clean_text, generate_hash
-from bs4 import BeautifulSoup
-from main.scraper.utils import parse_json_string, process_tags, safe_get, safe_parse_datetime
+from main.scraper.utils import parse_json_string, process_tags, safe_get, safe_parse_datetime, clean_text, generate_hash
 # 创建调试目录
 os.makedirs('debug/full_responses', exist_ok=True)
 
@@ -501,4 +499,4 @@ if __name__ == "__main__":
             
     finally:
         db.disconnect()
-    
+
