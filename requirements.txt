@@ -5,3 +5,4 @@ numpy>=1.24.0
 beautifulsoup4>=4.11.0
 mysql-connector-python>=8.0.28
 chardet>=5.2.0
+schedule>=1.2.2
