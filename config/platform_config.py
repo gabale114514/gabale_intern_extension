@@ -148,7 +148,7 @@ PLATFORM_CONFIG = {
         'pagination': {
             'param_name': 'page',  # 分页参数名
             'start_page': 1,       # 起始页码
-            'max_pages': 3,       # 最大爬取页数
+            'max_pages': 10,       # 最大爬取页数
         }
     },
     'xiaohongshu': {
