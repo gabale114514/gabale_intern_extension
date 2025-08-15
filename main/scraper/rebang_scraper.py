@@ -50,11 +50,13 @@ class RebangScraper:
         max_pages = pagination.get('max_pages', 1)
         page_param = pagination.get('param_name', 'page')
         page_size = pagination.get('page_size', 20)  # 默认每页20条
+        start_page = pagination.get('start_page', 1)  # 明确获取起始页码
         
         all_topics = []
         total_stats = {'total_count': 0, 'success_count': 0, 'error_count': 0, 'duplicate_count': 0}
         
-        for page in range(pagination['start_page'], max_pages + 1):
+        page = start_page  # 从配置的起始页码开始
+        while True:
             # 合并参数
             params = config['default_params'].copy()
             params['sub_tab'] = category
@@ -62,8 +64,8 @@ class RebangScraper:
             if extra_params:
                 params.update(extra_params)
             params['t'] = int(time.time() * 1000)
-            
             try:
+                params['page']=page
                 # 获取数据
                 api_data = self.api_fetcher.fetch_data(config['base_url'], params)
                 if not api_data:
@@ -75,8 +77,8 @@ class RebangScraper:
                 if not topics:
                     logger.info(f"平台 {platform_code} 分类 {category} 第 {page} 页无有效数据")
                     break
-                    
-                    
+                for topic in topics:
+                    topic['rank'] += (page - 1) * page_size
                 # 存储数据
                 current_hashes = [t['hash_id'] for t in topics]
                 self.storage_manager.mark_inactive_by_category(platform_code, current_hashes, category)
@@ -95,6 +97,7 @@ class RebangScraper:
                 if self.should_stop_pagination(page, topics, config):
                     break
                     
+                page += 1  # 递增页码
                 
             except Exception as e:
                 logger.error(f"平台 {platform_code} 分类 {category} 第 {page} 页异常: {e}")
