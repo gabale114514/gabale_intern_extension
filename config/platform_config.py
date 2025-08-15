@@ -20,7 +20,144 @@ PROCESSING_CONFIG = {
     'enable_duplicate_check': True,  # 启用重复检查
     'similarity_threshold': 0.8,     # 相似度阈值
 }
-
+PLATFORM_CONFIG = {
+    'weibo': {
+        'base_url': 'https://api.rebang.today/v1/items',  # 基础路径（固定不变）
+        'default_params': {  # 默认参数（可被动态参数覆盖）
+            'tab': 'weibo',
+            'sub_tab': 'search',  # 可改为'ent'/'news'等
+            'version': '2'
+        },
+        'data_path': ['data', 'list'],  # 数据列表在JSON中的路径
+        'list_type': 'string',  # 数据列表类型（string需解码为数组）
+        'field_mapping': {  # 字段映射（平台字段->统一字段）
+            'title': 'title',
+            'heat': 'heat_num',
+            'url': 'www_url',
+            'tag': 'label_name'
+        }
+    },
+    'zhihu': {
+        'base_url': 'https://api.rebang.today/v1/items',
+        'default_params': {
+            'tab': 'zhihu',
+            'date_type': 'now',
+            'page': '1',
+            'version': '1'
+        },
+        'data_path': ['data', 'list'],
+        'list_type': 'string',
+        'field_mapping': {
+            'title': 'title',
+            'heat': 'heat_str',
+            'url': 'www_url',
+            'tag': 'label_str'
+        }
+    },
+    'douyin': {
+        'base_url': 'https://api.rebang.today/v1/items',
+        'default_params': {
+            'tab': 'douyin',
+            'date_type': 'now',
+            'page': '1',
+            'version': '1'
+        },
+        'data_path': ['data', 'list'],
+        'list_type': 'string',
+        'field_mapping': {
+            'title': 'title',
+            'heat': 'heat_str',
+            'url': 'aweme_id',
+            'tag': 'describe'
+        }
+    },
+    'toutiao': {
+        'base_url': 'https://api.rebang.today/v1/items',
+        'default_params': {
+            'tab': 'toutiao',
+            'date_type': 'now',
+            'page': '1',
+            'version': '1'
+        },
+        'data_path': ['data', 'list'],
+        'list_type': 'string',
+        'field_mapping': {
+            'title': 'title',
+            'heat': 'hot_value',
+            'url': 'www_url',
+            'tag': 'label'
+        }
+    },
+    'baidu': {
+    'base_url': 'https://api.rebang.today/v1/items',
+    'default_params': {
+            'tab': 'baidu',
+            'sub_tab': 'realtime',
+            'page': '1',
+            'version': '1'
+        },
+    'data_path': ['data', 'list'],
+    'list_type': 'string',
+    'field_mapping': {
+        'title': 'word',
+        'heat': 'hot_score',
+        'url': 'query',
+        'tag': 'hot_tag'
+    }
+    },
+    'bilibili': {
+        'base_url': 'https://api.rebang.today/v1/items',
+    'default_params': {
+            'tab': 'bilibili',
+            'sub_tab': 'popular',
+            'date_type': 'now',
+            'page': '1',
+            'version': '1'
+        },
+        'data_path': ['data', 'list'],
+        'list_type': 'string',
+        'field_mapping': {
+            'title': 'title',
+            'heat': 'view',
+            'url': 'bvid',
+            'tag': 'owner_name'
+        }
+    },
+    'xiaohongshu': {
+        'base_url': 'https://api.rebang.today/v1/items',
+    'default_params': {
+            'tab': 'xiaohongshu',
+            'sub_tab': 'hot-search',
+            'page': '1',
+            'version': '1'
+        },
+        'data_path': ['data', 'list'],
+        'list_type': 'string',
+        'field_mapping': {
+            'title': 'title',
+            'heat': 'view_num',
+            'url': 'www_url',
+            'tag': 'tag'
+        }
+    },
+    'xueqiu': {
+        'base_url': 'https://api.rebang.today/v1/items',
+    'default_params': {
+            'tab': 'xueqiu',
+            'sub_tab': 'topic',
+            'page': '1',
+            'version': '1'
+        },
+        'data_path': ['data', 'list'],
+        'list_type': 'string',
+        'field_mapping': {
+            'title': 'title',
+            'heat': 'reason',
+            'url': 'www_url',
+            'tag': 'desc'
+        }
+    }
+}
 # 标签配置
 TAG_PATTERNS = {
     '热': r'热|🔥|hot|HOT',
@@ -51,4 +188,27 @@ LOGGING_CONFIG = {
     'file': 'hot_topic_tool.log',
     'max_bytes': 10 * 1024 * 1024,  # 10MB
     'backup_count': 5
+}
+# 1. 定义需要爬取的平台和分类
+platform_categories = {
+    'weibo': ['ent', 'search', 'news'],
+    'zhihu': ['hot'],
+    'douyin': ['hot'],
+    'toutiao': ['hot'],
+    'baidu': ['realtime'],
+    'bilibili': ['popular'],
+    'xiaohongshu': ['hot-search'],
+    'xueqiu': ['topic']
+}
+
+# 2. 定义平台的额外参数（可选）
+custom_params = {
+    'weibo': {'version': '2'},  # 微博的额外参数
+    'zhihu': {'page': '1'},  # 知乎的额外参数
+    'douyin': {'page': '1'},
+    'toutiao': {'page': '1'},
+    'baidu': {'page': '1'},
+    'bilibili': {'page': '1'},
+    'xiaohongshu': {'page': '1'},
+    'xueqiu': {'page': '1'}
 }
