@@ -1,11 +1,11 @@
 import re
 from typing import Dict, List, Any, Optional
 from datetime import datetime
-from .utils import clean_text, process_tags, generate_hash, safe_get, parse_json_string
+from main.scraper.utils import clean_text, process_tags, generate_hash, safe_get, parse_json_string
 
 class DataParser:
     @staticmethod
-    def parse_api_data(api_data: Dict, platform_code: str, category: str, config: Dict) -> List[Dict]:
+    def parse_api_data(api_data: Dict, platform_code: str, category: str, config: Dict, page: int) -> List[Dict]:
         current_data = api_data
         for key in config['data_path']:
             current_data = safe_get(current_data, key)
@@ -28,14 +28,16 @@ class DataParser:
             topic = {
                 "platform": platform_code,
                 "category": category,
+                "page": page,
                 "rank": idx,
                 "timestamp": datetime.now().isoformat(),
                 "title": title,
                 "heat_value": DataParser.extract_heat_value(safe_get(item, field_map['heat'], "")),
                 "url": f"https://rebang.today/item/{safe_get(item, field_map['url'], '')}" if safe_get(item, field_map['url'], '') else "",
                 "tags": process_tags(clean_text(safe_get(item, field_map['tag'], ""))),
-                "hash_id": generate_hash(f"{title}_{platform_code}_{category}")
+                "hash_id": generate_hash(f"{title}_{platform_code}_{category}_{page}"),
             }
+            
             topics.append(topic)
         return topics
 

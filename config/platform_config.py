@@ -4,14 +4,12 @@
 
 import os
 from typing import Dict, Any
-
 # 工具接口配置
 TOOL_CONFIG = {
     'name': '热搜话题处理工具',
     'version': '1.0.0',
     'description': '处理热搜话题数据并收录到数据库的工具接口'
 }
-
 # 数据处理配置
 PROCESSING_CONFIG = {
     'max_title_length': 500,  # 标题最大长度
@@ -35,6 +33,11 @@ PLATFORM_CONFIG = {
             'heat': 'heat_num',
             'url': 'www_url',
             'tag': 'label_name'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
         }
     },
     'zhihu': {
@@ -52,6 +55,11 @@ PLATFORM_CONFIG = {
             'heat': 'heat_str',
             'url': 'www_url',
             'tag': 'label_str'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
         }
     },
     'douyin': {
@@ -69,6 +77,11 @@ PLATFORM_CONFIG = {
             'heat': 'heat_str',
             'url': 'aweme_id',
             'tag': 'describe'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
         }
     },
     'toutiao': {
@@ -86,6 +99,11 @@ PLATFORM_CONFIG = {
             'heat': 'hot_value',
             'url': 'www_url',
             'tag': 'label'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
         }
     },
     'baidu': {
@@ -103,7 +121,12 @@ PLATFORM_CONFIG = {
         'heat': 'hot_score',
         'url': 'query',
         'tag': 'hot_tag'
-    }
+    },
+    'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
+        }
     },
     'bilibili': {
         'base_url': 'https://api.rebang.today/v1/items',
@@ -121,6 +144,11 @@ PLATFORM_CONFIG = {
             'heat': 'view',
             'url': 'bvid',
             'tag': 'owner_name'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 3,       # 最大爬取页数
         }
     },
     'xiaohongshu': {
@@ -138,6 +166,11 @@ PLATFORM_CONFIG = {
             'heat': 'view_num',
             'url': 'www_url',
             'tag': 'tag'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
         }
     },
     'xueqiu': {
@@ -155,6 +188,11 @@ PLATFORM_CONFIG = {
             'heat': 'reason',
             'url': 'www_url',
             'tag': 'desc'
+        },
+        'pagination': {
+            'param_name': 'page',  # 分页参数名
+            'start_page': 1,       # 起始页码
+            'max_pages': 1,       # 最大爬取页数
         }
     }
 }
@@ -181,24 +219,16 @@ CATEGORY_KEYWORDS = {
     '政治': ['政治', '政府', '政策', '官员', '会议']
 }
 
-# 日志配置
-LOGGING_CONFIG = {
-    'level': 'INFO',
-    'format': '%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    'file': 'hot_topic_tool.log',
-    'max_bytes': 10 * 1024 * 1024,  # 10MB
-    'backup_count': 5
-}
 # 1. 定义需要爬取的平台和分类
 platform_categories = {
     'weibo': ['ent', 'search', 'news'],
     'zhihu': ['hot'],
     'douyin': ['hot'],
     'toutiao': ['hot'],
-    'baidu': ['realtime'],
-    'bilibili': ['popular'],
+    'baidu': ['realtime','phrase','novel','movie','teleplay','car','game'],
+    'bilibili': ['popular','weekly','rank'],
     'xiaohongshu': ['hot-search'],
-    'xueqiu': ['topic']
+    'xueqiu': ['topic','news','notice']
 }
 
 # 2. 定义平台的额外参数（可选）
