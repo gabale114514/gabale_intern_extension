@@ -76,9 +76,6 @@ class RebangScraper:
                     logger.info(f"平台 {platform_code} 分类 {category} 第 {page} 页无有效数据")
                     break
                     
-                # 调整rank = 原始rank + (页码-1)*每页大小
-                for topic in topics:
-                    topic['rank'] += (page - 1) * page_size
                     
                 # 存储数据
                 current_hashes = [t['hash_id'] for t in topics]

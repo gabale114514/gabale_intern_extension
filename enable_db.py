@@ -26,4 +26,4 @@ def enable_all_platforms(db_path, enable):
             print("数据库连接已关闭")
 
 if __name__ == "__main__":
-    enable_all_platforms('gabale.db',1)
+    enable_all_platforms('gabale.db',0)

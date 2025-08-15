@@ -6,11 +6,12 @@ from main.database.database_manager import (
     save_collection_log,
     get_db_manager
 )
+from main.scraper.deduplicator import Deduplicator
 
 class StorageManager:
     def __init__(self):
         self.db = get_db_manager()
-    
+        self.deduplicator = Deduplicator()
     def save_topics(self, topics: List[Dict], deduplicator) -> Dict[str, int]:
         stats = {'total_count': len(topics), 'success_count': 0, 'error_count': 0, 'duplicate_count': 0}
         for topic in topics:
@@ -46,7 +47,7 @@ class StorageManager:
         mark_inactive_topics(platform_code, current_hashes, category=category)
     
     def save_collection_log(self, platform: str, category: str, status: str, 
-                          stats: Dict, start_time: str, end_time: str):
+                        stats: Dict, start_time: str, end_time: str):
         save_collection_log(
             platform=platform,
             category=category,
