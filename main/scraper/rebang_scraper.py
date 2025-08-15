@@ -207,7 +207,6 @@ if __name__ == "__main__":
     if not db.connect():
         print("❌ 数据库连接失败")
         exit(1)
-        
     try:
         scraper = RebangScraper()
         start_time = time.time()
@@ -217,7 +216,6 @@ if __name__ == "__main__":
             platform_categories=platform_categories,
             platform_extra_params=custom_params
         )
-        
         # 结果统计
         total_stats = {
             'platforms': 0,
@@ -227,7 +225,6 @@ if __name__ == "__main__":
             'error': 0,
             'disabled': 0
         }
-        
         # 打印详细结果
         print("\n📊 采集结果详情:")
         for platform, category_results in results.items():
@@ -274,4 +271,3 @@ if __name__ == "__main__":
         traceback.print_exc()
     finally:
         db.disconnect()
-        print("数据库连接已关闭")

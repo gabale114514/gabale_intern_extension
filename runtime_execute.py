@@ -46,9 +46,9 @@ def scheduled_job():
                     total_error += error
                     
                     print(f"  - 分类 {category}: {status}, "
-                         f"成功: {success}, "
-                         f"重复: {duplicate}, "
-                         f"错误: {error}")
+                        f"成功: {success}, "
+                        f"重复: {duplicate}, "
+                        f"错误: {error}")
                 else:
                     print(f"  - 分类 {category}: 结果格式异常")
         
@@ -71,12 +71,11 @@ def scheduled_job():
 if __name__ == "__main__":
     # 设置定时任务
     schedule.every(2).minutes.do(scheduled_job)
-
     # 立即执行一次
     scheduled_job()
-    
     # 保持程序运行
     print("定时采集服务已启动，等待执行...")
     while True:
         schedule.run_pending()
         time.sleep(1)
+        
