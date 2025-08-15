@@ -727,12 +727,12 @@ def save_hot_topic(topic_data: Dict[str, Any]) -> Union[int, bool]:
             'is_active': True
         })
         return new_topic_id if new_topic_id > 0 else False  # 新增失败才返回False
-
 def save_collection_log(platform: str, status: str, stats: Dict[str, int], 
                        start_time: datetime, end_time: datetime, 
+                       category: Optional[str] = None,  # 新增分类参数
                        error_message: str = None) -> int:
     """
-    保存采集记录
+    保存采集记录（支持分类信息）
     
     Args:
         platform: 平台代码
@@ -740,6 +740,7 @@ def save_collection_log(platform: str, status: str, stats: Dict[str, int],
         stats: 统计信息（包含total_count, success_count, error_count, duplicate_count）
         start_time: 开始时间
         end_time: 结束时间
+        category: 分类名称（可选，多分类爬取时使用）
         error_message: 错误信息
         
     Returns:
@@ -749,6 +750,7 @@ def save_collection_log(platform: str, status: str, stats: Dict[str, int],
     
     log_data = {
         'platform': platform,
+        'category': category,  # 新增：存储分类信息
         'status': status,
         'total_count': stats.get('total_count', 0),
         'success_count': stats.get('success_count', 0),
@@ -760,7 +762,7 @@ def save_collection_log(platform: str, status: str, stats: Dict[str, int],
     }
     
     return db.insert_collection_log(log_data)
-
+    
 def get_platform_hot_topics(platform_code: str, limit: int = 50) -> List[Dict[str, Any]]:
     """
     获取指定平台的热搜话题
@@ -824,42 +826,75 @@ def get_statistics() -> Dict[str, Any]:
         'tags': db.get_tag_statistics(),
         'collections': db.get_collection_statistics(7)
     }
-def mark_inactive_topics(platform_code: str, current_hashes: List[str]) -> int:
+# 在database_manager.py中修改mark_inactive_topics函数
+def mark_inactive_topics(platform_code: str, active_hashes: List[str], category: Optional[str] = None):
     """
-    标记不在当前榜单的话题为无效
-    
-    Args:
-        platform_code: 平台代码
-        current_hashes: 当前榜单所有话题的hash_id列表
-        
-    Returns:
-        被标记为无效的话题数量
+    标记指定平台+分类下不在活跃列表中的话题为失效状态
+    完全适配hot_topics表结构（使用platform_id关联、hash_id为字符串）
     """
     db = get_db_manager()
+    if not db.connection or not db.connection.is_connected():
+        db.connect()
     
-    # 获取平台ID
-    platform = db.get_platform_by_code(platform_code)
-    if not platform:
-        logger.error(f"平台 {platform_code} 不存在")
-        return 0
+    try:
+        # 1. 通过平台代码查询对应的platform_id（关联platforms表）
+        cursor = db.connection.cursor(dictionary=True)
+        cursor.execute("SELECT id FROM platforms WHERE code = %s", (platform_code,))
+        platform = cursor.fetchone()
+        if not platform:
+            logger.error(f"平台 {platform_code} 在platforms表中不存在，无法标记失效话题")
+            return False
+        platform_id = platform['id']  # 从platforms表获取的整数ID
+        
+        # 2. 构建WHERE条件（严格匹配hot_topics表字段）
+        where_conditions = [
+            "platform_id = %s",  # 使用platform_id关联，对应表中INT类型字段
+            "is_active = 1"      # 1表示活跃，符合表中is_active的TINYINT定义
+        ]
+        params = [platform_id]  # 先添加platform_id参数（整数类型）
+        
+        # 3. 处理活跃hash_id列表（hash_id为VARCHAR类型，需作为字符串参数）
+        if active_hashes:
+            # 为每个hash_id创建字符串占位符（%s），MySQL会自动加引号
+            placeholders = ', '.join(['%s'] * len(active_hashes))
+            where_conditions.append(f"hash_id NOT IN ({placeholders})")
+            params.extend(active_hashes)  # 添加字符串类型的hash_id列表
+        
+        # 4. 处理分类条件（如果指定）
+        if category:
+            where_conditions.append("category = %s")
+            params.append(category)  # 分类为字符串，直接作为参数
+        
+        # 5. 构建完整SQL（更新is_active为0，同时更新last_seen_at）
+        where_clause = " AND ".join(where_conditions)
+        update_sql = f"""
+            UPDATE hot_topics 
+            SET is_active = 0, 
+                last_seen_at = CURRENT_TIMESTAMP  # 直接使用MySQL的当前时间函数，避免类型转换
+            WHERE {where_clause}
+        """
+        
+        # 6. 执行SQL（参数通过列表传递，确保类型匹配）
+        cursor.execute(update_sql, params)
+        db.connection.commit()
+        affected_rows = cursor.rowcount
+        logger.info(
+            f"平台 {platform_code}（ID: {platform_id}）分类 {category or '全部'} "
+            f"成功标记 {affected_rows} 个失效话题"
+        )
+        return True if affected_rows >= 0 else False
     
-    # 构建查询条件
-    query = """
-    UPDATE hot_topics 
-    SET is_active = FALSE,
-        rank_change = 0
-    WHERE platform_id = %s
-      AND is_active = TRUE
-    """
-    params = [platform['id']]
+    except Exception as e:
+        logger.error(f"标记失效话题失败: {str(e)}")
+        db.connection.rollback()
+        return False
     
-    # 如果有当前话题列表，排除这些话题
-    if current_hashes:
-        query += " AND hash_id NOT IN (%s)" % ",".join(["%s"] * len(current_hashes))
-        params.extend(current_hashes)
+    finally:
+        if 'cursor' in locals():
+            cursor.close()
     
-    # 执行更新
-    return db.execute_update(query, tuple(params))
+    
+    
 
 
 # 测试连接
