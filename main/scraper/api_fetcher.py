@@ -24,7 +24,7 @@ class ApiFetcher:
             'Referer': f'{self.base_url}/',
         })
     
-    def fetch_data(self, url: str, params: Dict, max_retries: int = 2) -> Optional[Dict]:
+    def fetch_data(self, url: str, params: Dict, max_retries: int = 0) -> Optional[Dict]:
         retries = 0
         while retries <= max_retries:
             try:
